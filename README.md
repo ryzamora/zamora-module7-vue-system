@@ -1,5 +1,133 @@
-# Vue 3 + Vite
+# Student Task Management System
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Module 7 – Vue.js Frontend Prototype
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+**Student:** Ryza P. Zamora  
+**Course/Section:** BSCS 3A  
+**Subject:** Software Engineering 1  
+**Module:** Module 7 – Frontend Prototype
+
+---
+
+## Project Overview
+
+The Student Task Management System is a web-based application designed to help students manage their academic tasks.
+
+The system allows students to create, view, search, update, complete, and delete tasks. Task information is saved in the browser using localStorage so that the data remains available after refreshing the page.
+
+This project is a frontend prototype based on the architectural design created in Module 6.
+
+---
+
+## Selected Entity
+
+The selected entity for this Module 7 prototype is:
+
+### Task
+
+Each task contains the following information:
+
+- Task Title
+- Description
+- Subject
+- Deadline
+- Task Type
+- Completion Status
+
+Task types include:
+
+- Assignment
+- Project
+- Quiz
+- Exam
+- Other
+
+---
+
+## Features
+
+### Create Task
+Users can add a new task by entering the task title, subject, description, deadline, and task type.
+
+### View Tasks
+All saved tasks are displayed in the task list.
+
+### Search Tasks
+Users can search for tasks by:
+
+- Task title
+- Subject
+- Task type
+
+### Update Task
+Users can edit the details of an existing task using the Edit Task modal.
+
+### Delete Task
+Users can delete a task after confirming the deletion.
+
+### Mark as Completed
+Users can mark tasks as completed or change them back to pending.
+
+### Data Persistence
+Tasks are saved using browser localStorage. The data remains available even after refreshing or reopening the application.
+
+### Validation
+Required fields are validated before a task can be created or updated.
+
+Required fields:
+
+- Task Title
+- Subject
+- Deadline
+
+---
+
+## Technologies Used
+
+- Vue.js 3
+- JavaScript
+- Tailwind CSS
+- Vite
+- HTML
+- CSS
+- Browser localStorage
+- Git
+- GitHub
+
+---
+
+## Reusable Components
+
+The application uses reusable Vue components:
+
+- `AppHeader.vue` – Displays the application header and student information.
+- `RecordForm.vue` – Handles creating new tasks.
+- `RecordList.vue` – Displays, searches, edits, completes, and deletes tasks.
+- `AppFooter.vue` – Displays the application footer.
+
+---
+
+## Project Structure
+
+```text
+zamora-module7-vue-system/
+│
+├── public/
+│
+├── src/
+│   ├── components/
+│   │   ├── AppFooter.vue
+│   │   ├── AppHeader.vue
+│   │   ├── RecordForm.vue
+│   │   └── RecordList.vue
+│   │
+│   ├── App.vue
+│   ├── main.js
+│   └── style.css
+│
+├── .gitignore
+├── index.html
+├── package.json
+├── package-lock.json
+├── vite.config.js
+└── README.md
