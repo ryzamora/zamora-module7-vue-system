@@ -10,23 +10,8 @@ const deadline = ref('')
 const type = ref('Assignment')
 
 function submitTask() {
-  if (!title.value.trim()) {
-    alert('Please enter a task title.')
-    return
-  }
-
-  if (!subject.value.trim()) {
-    alert('Please enter a subject.')
-    return
-  }
-
-  if (!deadline.value) {
-    alert('Please select a deadline.')
-    return
-  }
-
   const newTask = {
-    id: Date.now(),
+    id: crypto.randomUUID(),
     title: title.value.trim(),
     description: description.value.trim(),
     subject: subject.value.trim(),
@@ -82,13 +67,16 @@ function submitTask() {
         <!-- Title -->
         <div class="md:col-span-2">
 
-          <label class="block text-sm font-semibold text-slate-700 mb-2">
+          <label for="new-task-title" class="block text-sm font-semibold text-slate-700 mb-2">
             Task Title <span class="text-red-500">*</span>
           </label>
 
           <input
             v-model="title"
+            id="new-task-title"
             type="text"
+            required
+            pattern=".*\S.*"
             placeholder="e.g. Software Engineering Assignment"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           />
@@ -98,13 +86,16 @@ function submitTask() {
         <!-- Subject -->
         <div>
 
-          <label class="block text-sm font-semibold text-slate-700 mb-2">
+          <label for="new-task-subject" class="block text-sm font-semibold text-slate-700 mb-2">
             Subject <span class="text-red-500">*</span>
           </label>
 
           <input
             v-model="subject"
+            id="new-task-subject"
             type="text"
+            required
+            pattern=".*\S.*"
             placeholder="e.g. Software Engineering 1"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           />
@@ -114,12 +105,13 @@ function submitTask() {
         <!-- Type -->
         <div>
 
-          <label class="block text-sm font-semibold text-slate-700 mb-2">
+          <label for="new-task-type" class="block text-sm font-semibold text-slate-700 mb-2">
             Task Type
           </label>
 
           <select
             v-model="type"
+            id="new-task-type"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           >
             <option>Assignment</option>
@@ -134,13 +126,15 @@ function submitTask() {
         <!-- Deadline -->
         <div>
 
-          <label class="block text-sm font-semibold text-slate-700 mb-2">
+          <label for="new-task-deadline" class="block text-sm font-semibold text-slate-700 mb-2">
             Deadline <span class="text-red-500">*</span>
           </label>
 
           <input
             v-model="deadline"
+            id="new-task-deadline"
             type="date"
+            required
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           />
 
@@ -149,12 +143,13 @@ function submitTask() {
         <!-- Description -->
         <div>
 
-          <label class="block text-sm font-semibold text-slate-700 mb-2">
+          <label for="new-task-description" class="block text-sm font-semibold text-slate-700 mb-2">
             Description
           </label>
 
           <input
             v-model="description"
+            id="new-task-description"
             type="text"
             placeholder="Short description..."
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"

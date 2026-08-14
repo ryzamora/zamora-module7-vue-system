@@ -11,18 +11,48 @@ import AppFooter from './components/AppFooter.vue'
 ========================= */
 
 const tasks = ref([])
-
 const STORAGE_KEY = 'student-tasks'
+const storageError = ref('')
+
+const emptyEditForm = () => ({
+  id: null,
+  title: '',
+  description: '',
+  subject: '',
+  deadline: '',
+  type: 'Assignment'
+})
+
+function isValidTask(task) {
+  return task && typeof task.id !== 'undefined' &&
+    typeof task.title === 'string' &&
+    typeof task.subject === 'string' &&
+    typeof task.deadline === 'string'
+}
 
 /* =========================
    LOAD SAVED TASKS
 ========================= */
 
 onMounted(() => {
-  const savedTasks = localStorage.getItem(STORAGE_KEY)
+  try {
+    const savedTasks = localStorage.getItem(STORAGE_KEY)
+    if (!savedTasks) return
 
-  if (savedTasks) {
-    tasks.value = JSON.parse(savedTasks)
+    const parsedTasks = JSON.parse(savedTasks)
+    if (!Array.isArray(parsedTasks)) throw new Error('Saved data is not a task list')
+
+    tasks.value = parsedTasks
+      .filter(isValidTask)
+      .map(task => ({
+        ...task,
+        description: task.description || '',
+        type: task.type || 'Assignment',
+        completed: Boolean(task.completed)
+      }))
+  } catch (error) {
+    console.error('Unable to load saved tasks.', error)
+    storageError.value = 'Your saved tasks could not be loaded. You can continue with a fresh list.'
   }
 })
 
@@ -33,10 +63,13 @@ onMounted(() => {
 watch(
   tasks,
   (newTasks) => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(newTasks)
-    )
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newTasks))
+      storageError.value = ''
+    } catch (error) {
+      console.error('Unable to save tasks.', error)
+      storageError.value = 'Your changes could not be saved on this device.'
+    }
   },
   { deep: true }
 )
@@ -133,14 +166,7 @@ function completeTask(id) {
 
 const showEditModal = ref(false)
 
-const editForm = ref({
-  id: null,
-  title: '',
-  description: '',
-  subject: '',
-  deadline: '',
-  type: 'Assignment'
-})
+const editForm = ref(emptyEditForm())
 
 function editTask(task) {
   editForm.value = {
@@ -157,24 +183,10 @@ function editTask(task) {
 
 function cancelEdit() {
   showEditModal.value = false
+  editForm.value = emptyEditForm()
 }
 
 function saveEdit() {
-  if (!editForm.value.title.trim()) {
-    alert('Please enter a task title.')
-    return
-  }
-
-  if (!editForm.value.subject.trim()) {
-    alert('Please enter a subject.')
-    return
-  }
-
-  if (!editForm.value.deadline) {
-    alert('Please select a deadline.')
-    return
-  }
-
   const task = tasks.value.find(
     task => task.id === editForm.value.id
   )
@@ -201,6 +213,16 @@ function saveEdit() {
 
     <!-- HEADER -->
     <AppHeader />
+
+    <div
+      v-if="storageError"
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4"
+      role="alert"
+    >
+      <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        {{ storageError }}
+      </p>
+    </div>
 
     <!-- MAIN CONTENT -->
     <main
@@ -476,6 +498,9 @@ function saveEdit() {
     <div
       v-if="showEditModal"
       class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-task-heading"
     >
 
       <!-- Dark Background -->
@@ -506,6 +531,7 @@ function saveEdit() {
             <div>
 
               <h2
+                id="edit-task-heading"
                 class="text-xl font-bold text-slate-800"
               >
                 Edit Task
@@ -526,6 +552,7 @@ function saveEdit() {
           <button
             type="button"
             @click="cancelEdit"
+            aria-label="Close edit task dialog"
             class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition flex items-center justify-center text-xl"
           >
             ×
@@ -553,6 +580,8 @@ function saveEdit() {
             <input
               v-model="editForm.title"
               type="text"
+              required
+              pattern=".*\S.*"
               placeholder="Enter task title"
               class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
             />
@@ -576,8 +605,10 @@ function saveEdit() {
               </label>
 
               <input
-                v-model="editForm.subject"
-                type="text"
+              v-model="editForm.subject"
+              type="text"
+              required
+              pattern=".*\S.*"
                 placeholder="Enter subject"
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
               />
@@ -644,6 +675,7 @@ function saveEdit() {
             <input
               v-model="editForm.deadline"
               type="date"
+              required
               class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
             />
 
@@ -686,6 +718,9 @@ function saveEdit() {
     <div
       v-if="showDeleteModal"
       class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-task-heading"
     >
 
       <!-- Dark Background -->
@@ -714,6 +749,7 @@ function saveEdit() {
 
           <!-- Title -->
           <h2
+            id="delete-task-heading"
             class="text-2xl font-bold text-slate-800"
           >
             Delete Task?

@@ -15,9 +15,22 @@ const emit = defineEmits([
 ])
 
 const searchText = ref('')
+const statusFilter = ref('all')
 
 /* Sort tasks by deadline */
 const sortOrder = ref('nearest')
+
+function deadlineInfo(deadline) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(`${deadline}T00:00:00`)
+  const daysAway = Math.round((dueDate - today) / 86_400_000)
+
+  if (daysAway < 0) return { label: `${Math.abs(daysAway)}d overdue`, tone: 'text-red-600' }
+  if (daysAway === 0) return { label: 'Due today', tone: 'text-red-600' }
+  if (daysAway === 1) return { label: 'Due tomorrow', tone: 'text-orange-600' }
+  return { label: `Due in ${daysAway}d`, tone: 'text-slate-500' }
+}
 
 const filteredTasks = computed(() => {
   const search = searchText.value.toLowerCase().trim()
@@ -31,6 +44,12 @@ const filteredTasks = computed(() => {
       task.subject.toLowerCase().includes(search) ||
       task.type.toLowerCase().includes(search)
     )
+  }
+
+  if (statusFilter.value === 'active') {
+    result = result.filter(task => !task.completed)
+  } else if (statusFilter.value === 'completed') {
+    result = result.filter(task => task.completed)
   }
 
   /* Sort by deadline */
@@ -69,11 +88,25 @@ const filteredTasks = computed(() => {
         <!-- Sort and Search -->
         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
 
+          <div class="w-full sm:w-40">
+            <label for="task-status-filter" class="sr-only">Filter tasks by status</label>
+            <select
+              id="task-status-filter"
+              v-model="statusFilter"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+
           <!-- Sort -->
           <div class="w-full sm:w-56">
 
             <select
               v-model="sortOrder"
+              aria-label="Sort tasks by deadline"
               class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
             >
               <option value="nearest">
@@ -96,6 +129,7 @@ const filteredTasks = computed(() => {
 
             <input
               v-model="searchText"
+              aria-label="Search tasks"
               type="text"
               placeholder="Search tasks..."
               class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
@@ -212,6 +246,13 @@ const filteredTasks = computed(() => {
                 📅 {{ task.deadline }}
               </span>
 
+              <span
+                v-if="!task.completed"
+                :class="['font-semibold', deadlineInfo(task.deadline).tone]"
+              >
+                {{ deadlineInfo(task.deadline).label }}
+              </span>
+
               <!-- Completed -->
               <span
                 v-if="task.completed"
@@ -238,6 +279,7 @@ const filteredTasks = computed(() => {
             <!-- Complete -->
             <button
               @click="emit('complete-task', task.id)"
+              :aria-label="task.completed ? `Mark ${task.title} as pending` : `Mark ${task.title} as complete`"
               class="px-4 py-2 rounded-lg text-sm font-semibold bg-green-50 hover:bg-green-100 text-green-700 transition"
             >
               {{ task.completed ? '↩ Undo' : '✓ Complete' }}
@@ -246,6 +288,7 @@ const filteredTasks = computed(() => {
             <!-- Edit -->
             <button
               @click="emit('edit-task', task)"
+              :aria-label="`Edit ${task.title}`"
               class="px-4 py-2 rounded-lg text-sm font-semibold bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition"
             >
               ✎ Edit
@@ -254,6 +297,7 @@ const filteredTasks = computed(() => {
             <!-- Delete -->
             <button
               @click="emit('delete-task', task.id)"
+              :aria-label="`Delete ${task.title}`"
               class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-50 hover:bg-red-100 text-red-600 transition"
             >
               🗑 Delete
