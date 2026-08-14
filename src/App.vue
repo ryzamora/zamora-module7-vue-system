@@ -6,9 +6,17 @@ import RecordForm from './components/RecordForm.vue'
 import RecordList from './components/RecordList.vue'
 import AppFooter from './components/AppFooter.vue'
 
+/* =========================
+   TASK DATA
+========================= */
+
 const tasks = ref([])
 
 const STORAGE_KEY = 'student-tasks'
+
+/* =========================
+   LOAD SAVED TASKS
+========================= */
 
 onMounted(() => {
   const savedTasks = localStorage.getItem(STORAGE_KEY)
@@ -17,6 +25,10 @@ onMounted(() => {
     tasks.value = JSON.parse(savedTasks)
   }
 })
+
+/* =========================
+   SAVE TASKS TO LOCAL STORAGE
+========================= */
 
 watch(
   tasks,
@@ -29,7 +41,13 @@ watch(
   { deep: true }
 )
 
-const totalTasks = computed(() => tasks.value.length)
+/* =========================
+   STATISTICS
+========================= */
+
+const totalTasks = computed(() =>
+  tasks.value.length
+)
 
 const completedTasks = computed(() =>
   tasks.value.filter(task => task.completed).length
@@ -49,23 +67,55 @@ const completionRate = computed(() => {
   )
 })
 
+/* =========================
+   ADD TASK
+========================= */
+
 function addTask(newTask) {
   tasks.value.push(newTask)
 }
 
+/* =========================
+   DELETE TASK MODAL
+========================= */
+
+const showDeleteModal = ref(false)
+const taskToDelete = ref(null)
+
 function deleteTask(id) {
-  const confirmed = window.confirm(
-    'Are you sure you want to delete this task?'
+  const task = tasks.value.find(
+    task => task.id === id
   )
 
-  if (!confirmed) {
+  if (!task) {
+    return
+  }
+
+  taskToDelete.value = task
+  showDeleteModal.value = true
+}
+
+function cancelDelete() {
+  showDeleteModal.value = false
+  taskToDelete.value = null
+}
+
+function confirmDelete() {
+  if (!taskToDelete.value) {
     return
   }
 
   tasks.value = tasks.value.filter(
-    task => task.id !== id
+    task => task.id !== taskToDelete.value.id
   )
+
+  showDeleteModal.value = false
+  taskToDelete.value = null
 }
+
+/* =========================
+   COMPLETE TASK
+========================= */
 
 function completeTask(id) {
   const task = tasks.value.find(
@@ -76,6 +126,10 @@ function completeTask(id) {
     task.completed = !task.completed
   }
 }
+
+/* =========================
+   EDIT TASK MODAL
+========================= */
 
 const showEditModal = ref(false)
 
@@ -137,46 +191,73 @@ function saveEdit() {
 }
 </script>
 
+
 <template>
 
-  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+  <!-- MAIN PAGE -->
+  <div
+    class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+  >
 
+    <!-- HEADER -->
     <AppHeader />
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- MAIN CONTENT -->
+    <main
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
 
-      <!-- HERO -->
+      <!-- =========================
+           HERO SECTION
+      ========================== -->
+
       <section
         class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white p-8 md:p-10 mb-8 shadow-xl"
       >
 
         <!-- Decorative circles -->
-        <div class="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full"></div>
+        <div
+          class="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full"
+        ></div>
 
-        <div class="absolute -bottom-32 -left-20 w-72 h-72 bg-white/5 rounded-full"></div>
+        <div
+          class="absolute -bottom-32 -left-20 w-72 h-72 bg-white/5 rounded-full"
+        ></div>
 
-        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+        <div
+          class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8"
+        >
 
+          <!-- Hero Text -->
           <div class="max-w-2xl">
 
-            <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-5">
+            <div
+              class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-5"
+            >
               <span>✨</span>
               <span>Student Productivity Dashboard</span>
             </div>
 
-            <h1 class="text-3xl md:text-5xl font-bold leading-tight">
-              Good day👋
+            <h1
+              class="text-3xl md:text-5xl font-bold leading-tight"
+            >
+              Good day 👋
             </h1>
 
-            <p class="text-blue-100 text-base md:text-lg mt-4 leading-relaxed">
-              Organize your academic tasks, stay on top of deadlines,
-              and make every study day more productive.
+            <p
+              class="text-blue-100 text-base md:text-lg mt-4 leading-relaxed"
+            >
+              Organize your academic tasks, stay on top of
+              deadlines, and make every study day more productive.
             </p>
 
           </div>
 
-          <!-- Progress -->
-          <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 w-full lg:w-64">
+
+          <!-- Overall Progress -->
+          <div
+            class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 w-full lg:w-64"
+          >
 
             <p class="text-blue-100 text-sm">
               Overall Progress
@@ -188,13 +269,18 @@ function saveEdit() {
                 {{ completionRate }}%
               </span>
 
-              <span class="text-blue-200 text-sm mb-1">
+              <span
+                class="text-blue-200 text-sm mb-1"
+              >
                 completed
               </span>
 
             </div>
 
-            <div class="h-2 bg-white/20 rounded-full mt-4 overflow-hidden">
+            <!-- Progress Bar -->
+            <div
+              class="h-2 bg-white/20 rounded-full mt-4 overflow-hidden"
+            >
 
               <div
                 class="h-full bg-white rounded-full transition-all duration-500"
@@ -203,7 +289,9 @@ function saveEdit() {
 
             </div>
 
-            <p class="text-xs text-blue-200 mt-3">
+            <p
+              class="text-xs text-blue-200 mt-3"
+            >
               Keep going! Every completed task counts. 💪
             </p>
 
@@ -214,31 +302,48 @@ function saveEdit() {
       </section>
 
 
-      <!-- STATISTICS -->
-      <section class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+      <!-- =========================
+           STATISTICS
+      ========================== -->
 
-        <!-- Total -->
-        <div class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300">
+      <section
+        class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8"
+      >
 
-          <div class="flex items-center justify-between">
+        <!-- TOTAL TASKS -->
+        <div
+          class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300"
+        >
+
+          <div
+            class="flex items-center justify-between"
+          >
 
             <div>
 
-              <p class="text-sm font-medium text-slate-500">
+              <p
+                class="text-sm font-medium text-slate-500"
+              >
                 Total Tasks
               </p>
 
-              <p class="text-4xl font-bold text-slate-800 mt-2">
+              <p
+                class="text-4xl font-bold text-slate-800 mt-2"
+              >
                 {{ totalTasks }}
               </p>
 
-              <p class="text-xs text-slate-400 mt-2">
+              <p
+                class="text-xs text-slate-400 mt-2"
+              >
                 All academic tasks
               </p>
 
             </div>
 
-            <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+            <div
+              class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl group-hover:scale-110 transition"
+            >
               📚
             </div>
 
@@ -247,28 +352,40 @@ function saveEdit() {
         </div>
 
 
-        <!-- Pending -->
-        <div class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300">
+        <!-- PENDING TASKS -->
+        <div
+          class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300"
+        >
 
-          <div class="flex items-center justify-between">
+          <div
+            class="flex items-center justify-between"
+          >
 
             <div>
 
-              <p class="text-sm font-medium text-slate-500">
+              <p
+                class="text-sm font-medium text-slate-500"
+              >
                 Pending
               </p>
 
-              <p class="text-4xl font-bold text-orange-500 mt-2">
+              <p
+                class="text-4xl font-bold text-orange-500 mt-2"
+              >
                 {{ pendingTasks }}
               </p>
 
-              <p class="text-xs text-slate-400 mt-2">
+              <p
+                class="text-xs text-slate-400 mt-2"
+              >
                 Tasks to complete
               </p>
 
             </div>
 
-            <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+            <div
+              class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl group-hover:scale-110 transition"
+            >
               ⏳
             </div>
 
@@ -277,28 +394,40 @@ function saveEdit() {
         </div>
 
 
-        <!-- Completed -->
-        <div class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300">
+        <!-- COMPLETED TASKS -->
+        <div
+          class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300"
+        >
 
-          <div class="flex items-center justify-between">
+          <div
+            class="flex items-center justify-between"
+          >
 
             <div>
 
-              <p class="text-sm font-medium text-slate-500">
+              <p
+                class="text-sm font-medium text-slate-500"
+              >
                 Completed
               </p>
 
-              <p class="text-4xl font-bold text-emerald-500 mt-2">
+              <p
+                class="text-4xl font-bold text-emerald-500 mt-2"
+              >
                 {{ completedTasks }}
               </p>
 
-              <p class="text-xs text-slate-400 mt-2">
+              <p
+                class="text-xs text-slate-400 mt-2"
+              >
                 Finished tasks
               </p>
 
             </div>
 
-            <div class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl group-hover:scale-110 transition">
+            <div
+              class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl group-hover:scale-110 transition"
+            >
               ✓
             </div>
 
@@ -309,15 +438,23 @@ function saveEdit() {
       </section>
 
 
-      <!-- ADD TASK -->
+      <!-- =========================
+           ADD TASK
+      ========================== -->
+
       <section class="mb-8">
 
-        <RecordForm @add-task="addTask" />
+        <RecordForm
+          @add-task="addTask"
+        />
 
       </section>
 
 
-      <!-- TASKS -->
+      <!-- =========================
+           TASK LIST
+      ========================== -->
+
       <RecordList
         :tasks="tasks"
         @delete-task="deleteTask"
@@ -327,9 +464,15 @@ function saveEdit() {
 
     </main>
 
-        <AppFooter />
 
-    <!-- EDIT TASK MODAL -->
+    <!-- FOOTER -->
+    <AppFooter />
+
+
+    <!-- =========================
+         EDIT TASK MODAL
+    ========================== -->
+
     <div
       v-if="showEditModal"
       class="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -341,34 +484,47 @@ function saveEdit() {
         @click="cancelEdit"
       ></div>
 
-      <!-- Modal -->
+
+      <!-- Edit Modal -->
       <div
         class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
       >
 
         <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+        <div
+          class="flex items-center justify-between px-6 py-5 border-b border-slate-100"
+        >
 
           <div class="flex items-center gap-3">
 
-            <div class="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center">
+            <div
+              class="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center"
+            >
               <span class="text-xl">✏️</span>
             </div>
 
             <div>
-              <h2 class="text-xl font-bold text-slate-800">
+
+              <h2
+                class="text-xl font-bold text-slate-800"
+              >
                 Edit Task
               </h2>
 
-              <p class="text-sm text-slate-400">
+              <p
+                class="text-sm text-slate-400"
+              >
                 Update your task details
               </p>
+
             </div>
 
           </div>
 
+
           <!-- Close Button -->
           <button
+            type="button"
             @click="cancelEdit"
             class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition flex items-center justify-center text-xl"
           >
@@ -378,16 +534,18 @@ function saveEdit() {
         </div>
 
 
-        <!-- Form -->
+        <!-- Edit Form -->
         <form
           @submit.prevent="saveEdit"
           class="p-6 space-y-5"
         >
 
-          <!-- Title -->
+          <!-- Task Title -->
           <div>
 
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label
+              class="block text-sm font-semibold text-slate-700 mb-2"
+            >
               Task Title
               <span class="text-red-500">*</span>
             </label>
@@ -403,12 +561,16 @@ function saveEdit() {
 
 
           <!-- Subject + Type -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          >
 
             <!-- Subject -->
             <div>
 
-              <label class="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Subject
                 <span class="text-red-500">*</span>
               </label>
@@ -426,7 +588,9 @@ function saveEdit() {
             <!-- Type -->
             <div>
 
-              <label class="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Task Type
               </label>
 
@@ -434,11 +598,13 @@ function saveEdit() {
                 v-model="editForm.type"
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
               >
+
                 <option>Assignment</option>
                 <option>Project</option>
                 <option>Quiz</option>
                 <option>Exam</option>
                 <option>Other</option>
+
               </select>
 
             </div>
@@ -449,7 +615,9 @@ function saveEdit() {
           <!-- Description -->
           <div>
 
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label
+              class="block text-sm font-semibold text-slate-700 mb-2"
+            >
               Description
             </label>
 
@@ -466,7 +634,9 @@ function saveEdit() {
           <!-- Deadline -->
           <div>
 
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label
+              class="block text-sm font-semibold text-slate-700 mb-2"
+            >
               Deadline
               <span class="text-red-500">*</span>
             </label>
@@ -481,7 +651,9 @@ function saveEdit() {
 
 
           <!-- Buttons -->
-          <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-slate-100">
+          <div
+            class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-slate-100"
+          >
 
             <button
               type="button"
@@ -501,6 +673,101 @@ function saveEdit() {
           </div>
 
         </form>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================
+         DELETE TASK MODAL
+    ========================== -->
+
+    <div
+      v-if="showDeleteModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+
+      <!-- Dark Background -->
+      <div
+        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+        @click="cancelDelete"
+      ></div>
+
+
+      <!-- Delete Modal -->
+      <div
+        class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+      >
+
+        <div class="p-7 text-center">
+
+          <!-- Delete Icon -->
+          <div
+            class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center mb-5"
+          >
+            <span class="text-3xl">
+              🗑️
+            </span>
+          </div>
+
+
+          <!-- Title -->
+          <h2
+            class="text-2xl font-bold text-slate-800"
+          >
+            Delete Task?
+          </h2>
+
+
+          <!-- Message -->
+          <p
+            class="text-slate-500 mt-3 leading-relaxed"
+          >
+            Are you sure you want to delete
+            <span
+              class="font-semibold text-slate-700"
+            >
+              "{{ taskToDelete?.title }}"
+            </span>
+            ?
+          </p>
+
+
+          <p
+            class="text-sm text-slate-400 mt-2"
+          >
+            This action cannot be undone.
+          </p>
+
+
+          <!-- Buttons -->
+          <div
+            class="flex flex-col sm:flex-row gap-3 mt-7"
+          >
+
+            <!-- Cancel -->
+            <button
+              type="button"
+              @click="cancelDelete"
+              class="flex-1 px-5 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+            >
+              Cancel
+            </button>
+
+
+            <!-- Delete -->
+            <button
+              type="button"
+              @click="confirmDelete"
+              class="flex-1 px-5 py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 shadow-sm hover:shadow-lg transition"
+            >
+              🗑️ Delete Task
+            </button>
+
+          </div>
+
+        </div>
 
       </div>
 
