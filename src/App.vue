@@ -100,6 +100,18 @@ const completionRate = computed(() => {
   )
 })
 
+const nextTask = computed(() => {
+  return tasks.value
+    .filter(task => !task.completed)
+    .sort((a, b) => new Date(`${a.deadline}T00:00:00`) - new Date(`${b.deadline}T00:00:00`))[0] || null
+})
+
+const todayLabel = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric'
+}).format(new Date())
+
 /* =========================
    ADD TASK
 ========================= */
@@ -208,7 +220,7 @@ function saveEdit() {
 
   <!-- MAIN PAGE -->
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+    class="min-h-screen bg-[#f7f8fc] text-slate-900"
   >
 
     <!-- HEADER -->
@@ -234,16 +246,16 @@ function saveEdit() {
       ========================== -->
 
       <section
-        class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white p-8 md:p-10 mb-8 shadow-xl"
+        class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 text-white p-8 md:p-12 mb-6 shadow-2xl shadow-indigo-950/20"
       >
 
         <!-- Decorative circles -->
         <div
-          class="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full"
+          class="absolute -top-20 -right-20 w-72 h-72 bg-fuchsia-400/15 rounded-full blur-2xl"
         ></div>
 
         <div
-          class="absolute -bottom-32 -left-20 w-72 h-72 bg-white/5 rounded-full"
+          class="absolute -bottom-32 -left-20 w-80 h-80 bg-cyan-400/10 rounded-full blur-2xl"
         ></div>
 
         <div
@@ -254,7 +266,7 @@ function saveEdit() {
           <div class="max-w-2xl">
 
             <div
-              class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full text-sm mb-5"
+              class="inline-flex items-center gap-2 border border-white/15 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium mb-5"
             >
               <span>✨</span>
               <span>Student Productivity Dashboard</span>
@@ -263,14 +275,13 @@ function saveEdit() {
             <h1
               class="text-3xl md:text-5xl font-bold leading-tight"
             >
-              Good day 👋
+              Own your study day.
             </h1>
 
             <p
               class="text-blue-100 text-base md:text-lg mt-4 leading-relaxed"
             >
-              Organize your academic tasks, stay on top of
-              deadlines, and make every study day more productive.
+              {{ todayLabel }} · Turn every deadline into a clear, manageable next step.
             </p>
 
           </div>
@@ -278,7 +289,7 @@ function saveEdit() {
 
           <!-- Overall Progress -->
           <div
-            class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 w-full lg:w-64"
+            class="bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 w-full lg:w-72 shadow-xl shadow-black/10"
           >
 
             <p class="text-blue-100 text-sm">
@@ -314,13 +325,38 @@ function saveEdit() {
             <p
               class="text-xs text-blue-200 mt-3"
             >
-              Keep going! Every completed task counts. 💪
+              {{ completedTasks }} finished · {{ pendingTasks }} still in focus
             </p>
 
           </div>
 
         </div>
 
+      </section>
+
+      <section class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5 mb-8">
+        <div class="rounded-3xl border border-indigo-100 bg-white p-6 shadow-lg shadow-slate-200/40">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Next up</p>
+              <h2 class="mt-2 text-xl font-bold text-slate-900">
+                {{ nextTask ? nextTask.title : 'Your schedule is clear' }}
+              </h2>
+              <p class="mt-1 text-sm text-slate-500">
+                {{ nextTask ? `${nextTask.subject} · Due ${nextTask.deadline}` : 'Add a task below to start planning your week.' }}
+              </p>
+            </div>
+            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-xl">🎯</div>
+          </div>
+        </div>
+        <div class="rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-700 p-6 text-white shadow-lg shadow-indigo-200">
+          <p class="text-sm text-indigo-100">Consistency score</p>
+          <div class="mt-1 flex items-end gap-2">
+            <strong class="text-4xl">{{ completionRate }}%</strong>
+            <span class="mb-1 text-sm text-indigo-100">complete</span>
+          </div>
+          <p class="mt-3 text-sm text-indigo-100">Small wins add up. Keep the momentum going.</p>
+        </div>
       </section>
 
 

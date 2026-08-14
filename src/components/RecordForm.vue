@@ -31,19 +31,19 @@ function submitTask() {
 </script>
 
 <template>
-  <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <section class="bg-white rounded-[2rem] border border-slate-200/80 shadow-xl shadow-slate-200/40 overflow-hidden">
 
     <!-- Form Header -->
-    <div class="px-6 py-5 border-b border-slate-100">
+    <div class="px-6 py-5 border-b border-indigo-50 bg-gradient-to-r from-white via-indigo-50/50 to-white">
 
       <div class="flex items-center gap-3">
 
-        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+        <div class="w-11 h-11 bg-indigo-100 rounded-2xl flex items-center justify-center shadow-sm shadow-indigo-100">
           <span class="text-xl">➕</span>
         </div>
 
         <div>
-          <h2 class="text-lg font-bold text-slate-800">
+          <h2 class="text-lg font-black tracking-tight text-slate-900">
             Add New Task
           </h2>
 
@@ -164,7 +164,7 @@ function submitTask() {
 
         <button
           type="submit"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-sm hover:shadow-md transition flex items-center gap-2"
+          class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 transition flex items-center gap-2"
         >
           <span>+</span>
           Add Task

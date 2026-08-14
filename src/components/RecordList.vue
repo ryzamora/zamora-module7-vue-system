@@ -67,16 +67,16 @@ const filteredTasks = computed(() => {
 </script>
 
 <template>
-  <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+  <section class="bg-white rounded-[2rem] border border-slate-200/80 shadow-xl shadow-slate-200/40 overflow-hidden">
 
     <!-- Header -->
-    <div class="p-6 border-b border-slate-100">
+    <div class="p-6 border-b border-slate-100 bg-gradient-to-r from-white via-slate-50 to-white">
 
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
         <!-- Title -->
         <div>
-          <h2 class="text-xl font-bold text-slate-800">
+          <h2 class="text-xl font-black tracking-tight text-slate-900">
             My Tasks
           </h2>
 
@@ -192,14 +192,14 @@ const filteredTasks = computed(() => {
       <div
         v-for="task in filteredTasks"
         :key="task.id"
-        class="p-6 hover:bg-slate-50 transition"
+        class="group relative p-6 transition hover:bg-indigo-50/40"
       >
 
         <div class="flex flex-col lg:flex-row lg:items-center gap-5">
 
           <!-- Icon -->
           <div
-            class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
+            class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-sm"
             :class="task.completed
               ? 'bg-green-100'
               : 'bg-blue-100'"
@@ -213,7 +213,7 @@ const filteredTasks = computed(() => {
             <div class="flex flex-wrap items-center gap-2">
 
               <h3
-                class="font-bold text-lg"
+                class="font-bold text-lg tracking-tight"
                 :class="task.completed
                   ? 'text-slate-400 line-through'
                   : 'text-slate-800'"
@@ -274,7 +274,7 @@ const filteredTasks = computed(() => {
           </div>
 
           <!-- Actions -->
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2 lg:justify-end">
 
             <!-- Complete -->
             <button
