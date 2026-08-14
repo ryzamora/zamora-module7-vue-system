@@ -16,18 +16,34 @@ const emit = defineEmits([
 
 const searchText = ref('')
 
+/* Sort tasks by deadline */
+const sortOrder = ref('nearest')
+
 const filteredTasks = computed(() => {
   const search = searchText.value.toLowerCase().trim()
 
-  if (!search) {
-    return props.tasks
+  let result = props.tasks
+
+  /* Search */
+  if (search) {
+    result = props.tasks.filter(task =>
+      task.title.toLowerCase().includes(search) ||
+      task.subject.toLowerCase().includes(search) ||
+      task.type.toLowerCase().includes(search)
+    )
   }
 
-  return props.tasks.filter(task =>
-    task.title.toLowerCase().includes(search) ||
-    task.subject.toLowerCase().includes(search) ||
-    task.type.toLowerCase().includes(search)
-  )
+  /* Sort by deadline */
+  return [...result].sort((a, b) => {
+    const dateA = new Date(a.deadline)
+    const dateB = new Date(b.deadline)
+
+    if (sortOrder.value === 'nearest') {
+      return dateA - dateB
+    }
+
+    return dateB - dateA
+  })
 })
 </script>
 
@@ -39,6 +55,7 @@ const filteredTasks = computed(() => {
 
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
+        <!-- Title -->
         <div>
           <h2 class="text-xl font-bold text-slate-800">
             My Tasks
@@ -49,19 +66,42 @@ const filteredTasks = computed(() => {
           </p>
         </div>
 
-        <!-- Search -->
-        <div class="relative w-full md:w-80">
+        <!-- Sort and Search -->
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
 
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-            🔎
-          </span>
+          <!-- Sort -->
+          <div class="w-full sm:w-56">
 
-          <input
-            v-model="searchText"
-            type="text"
-            placeholder="Search tasks..."
-            class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
-          />
+            <select
+              v-model="sortOrder"
+              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+            >
+              <option value="nearest">
+                📅 Nearest Deadline
+              </option>
+
+              <option value="farthest">
+                📅 Farthest Deadline
+              </option>
+            </select>
+
+          </div>
+
+          <!-- Search -->
+          <div class="relative w-full sm:w-80">
+
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+              🔎
+            </span>
+
+            <input
+              v-model="searchText"
+              type="text"
+              placeholder="Search tasks..."
+              class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+            />
+
+          </div>
 
         </div>
 
@@ -147,6 +187,7 @@ const filteredTasks = computed(() => {
                 {{ task.title }}
               </h3>
 
+              <!-- Task Type -->
               <span
                 class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600"
               >
@@ -155,10 +196,12 @@ const filteredTasks = computed(() => {
 
             </div>
 
+            <!-- Description -->
             <p class="text-sm text-slate-500 mt-1">
               {{ task.description || 'No description provided.' }}
             </p>
 
+            <!-- Task Details -->
             <div class="flex flex-wrap items-center gap-4 mt-3 text-sm">
 
               <span class="text-slate-500">
@@ -169,6 +212,7 @@ const filteredTasks = computed(() => {
                 📅 {{ task.deadline }}
               </span>
 
+              <!-- Completed -->
               <span
                 v-if="task.completed"
                 class="font-semibold text-green-600"
@@ -176,6 +220,7 @@ const filteredTasks = computed(() => {
                 ● Completed
               </span>
 
+              <!-- Pending -->
               <span
                 v-else
                 class="font-semibold text-orange-500"
@@ -190,6 +235,7 @@ const filteredTasks = computed(() => {
           <!-- Actions -->
           <div class="flex flex-wrap gap-2">
 
+            <!-- Complete -->
             <button
               @click="emit('complete-task', task.id)"
               class="px-4 py-2 rounded-lg text-sm font-semibold bg-green-50 hover:bg-green-100 text-green-700 transition"
@@ -197,6 +243,7 @@ const filteredTasks = computed(() => {
               {{ task.completed ? '↩ Undo' : '✓ Complete' }}
             </button>
 
+            <!-- Edit -->
             <button
               @click="emit('edit-task', task)"
               class="px-4 py-2 rounded-lg text-sm font-semibold bg-yellow-50 hover:bg-yellow-100 text-yellow-700 transition"
@@ -204,6 +251,7 @@ const filteredTasks = computed(() => {
               ✎ Edit
             </button>
 
+            <!-- Delete -->
             <button
               @click="emit('delete-task', task.id)"
               class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-50 hover:bg-red-100 text-red-600 transition"
