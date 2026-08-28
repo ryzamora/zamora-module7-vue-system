@@ -5,6 +5,7 @@ import AppHeader from './components/AppHeader.vue'
 import RecordForm from './components/RecordForm.vue'
 import RecordList from './components/RecordList.vue'
 import AppFooter from './components/AppFooter.vue'
+import { nextUpcomingTask } from './utils/taskSchedule'
 
 /* =========================
    TASK DATA
@@ -100,11 +101,7 @@ const completionRate = computed(() => {
   )
 })
 
-const nextTask = computed(() => {
-  return tasks.value
-    .filter(task => !task.completed)
-    .sort((a, b) => new Date(`${a.deadline}T00:00:00`) - new Date(`${b.deadline}T00:00:00`))[0] || null
-})
+const nextTask = computed(() => nextUpcomingTask(tasks.value))
 
 const todayLabel = new Intl.DateTimeFormat('en-US', {
   weekday: 'long',
