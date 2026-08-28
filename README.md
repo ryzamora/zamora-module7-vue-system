@@ -131,3 +131,23 @@ zamora-module7-vue-system/
 ├── package-lock.json
 ├── vite.config.js
 └── README.md
+---
+
+## Module 8 - Software Testing
+
+The Module 7 Taskly system was tested using manual functional tests and automated Vitest unit tests.
+
+- Automated tests: 6 passing tests for the `nextUpcomingTask` scheduling utility.
+- Manual tests: 10 executed cases covering add, display, edit, delete, search, validation, and localStorage persistence.
+- Corrected defect: **Next Up** previously displayed an overdue pending task. It now excludes overdue tasks before selecting the nearest upcoming task.
+- Regression result: the full unit-test suite and production build pass.
+- CI runs `npm ci`, `npm run test:run`, and `npm run build` on pushes and pull requests.
+
+### Test commands
+
+```bash
+npm run test:run
+npm run build
+```
+
+Detailed records are in [docs/testing](docs/testing).
