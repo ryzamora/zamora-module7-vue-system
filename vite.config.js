@@ -5,4 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: '/zamora-module7-vue-system/',
   plugins: [vue(), tailwindcss()],
+  test: {
+    environment: 'jsdom'
+  }
 })
