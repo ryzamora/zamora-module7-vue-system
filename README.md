@@ -151,3 +151,20 @@ npm run build
 ```
 
 Detailed records are in [docs/testing](docs/testing).
+
+## Module 9 - Software Evolution
+
+### Change Request
+**CR-M9-01: Add Active/Inactive Task Status Filter**
+
+- Maintenance Type: Perfective Maintenance
+- Version: 1.1.0
+
+### Implementation
+Tasks can now be assigned an Active or Inactive status. Users can filter the task list by All Statuses, Active, or Inactive. Status is supported when creating and editing tasks and is displayed as a badge in the task list.
+
+### Compatibility
+Older localStorage task records without a `status` field are safely loaded with `Active` as the default status.
+
+### Regression Evidence
+CRUD, search, sorting, validation, delete confirmation, persistence, automated tests, and production build were retained and verified.

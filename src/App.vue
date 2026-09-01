@@ -5,124 +5,273 @@ import AppHeader from './components/AppHeader.vue'
 import RecordForm from './components/RecordForm.vue'
 import RecordList from './components/RecordList.vue'
 import AppFooter from './components/AppFooter.vue'
-import { nextUpcomingTask } from './utils/taskSchedule'
+import AuthForm from './components/AuthForm.vue'
 
-/* =========================
+/* =========================================================
+   AUTHENTICATION
+========================================================= */
+
+const isLoggedIn = ref(false)
+const currentUser = ref(null)
+
+const USERS_STORAGE_KEY = 'taskly-users'
+const CURRENT_USER_KEY = 'taskly-current-user'
+const TASKS_STORAGE_PREFIX = 'taskly-tasks-'
+
+function getAllUsers() {
+  try {
+    const stored = localStorage.getItem(USERS_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function handleAuthSubmit(authData) {
+  if (authData.mode === 'login') {
+    loginUser(authData.username, authData.password)
+  } else {
+    registerUser(authData.username, authData.password)
+  }
+}
+
+function registerUser(username, password) {
+  const users = getAllUsers()
+  
+  if (users.some(u => u.username === username)) {
+    alert('Username already exists. Please choose another.')
+    return
+  }
+
+  users.push({ username, password })
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+  loginUser(username, password)
+}
+
+function loginUser(username, password) {
+  const users = getAllUsers()
+  const user = users.find(u => u.username === username && u.password === password)
+
+  if (!user) {
+    alert('Invalid username or password.')
+    return
+  }
+
+  currentUser.value = { username }
+  isLoggedIn.value = true
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser.value))
+  loadUserTasks()
+}
+
+function logoutUser() {
+  if (confirm('Are you sure you want to log out?')) {
+    isLoggedIn.value = false
+    currentUser.value = null
+    localStorage.removeItem(CURRENT_USER_KEY)
+    tasks.value = []
+  }
+}
+
+function getUserTasksKey() {
+  return currentUser.value ? `${TASKS_STORAGE_PREFIX}${currentUser.value.username}` : null
+}
+
+const STORAGE_KEY = computed(() => getUserTasksKey())
+
+/* =========================================================
    TASK DATA
-========================= */
+========================================================= */
 
 const tasks = ref([])
-const STORAGE_KEY = 'student-tasks'
-const storageError = ref('')
 
-const emptyEditForm = () => ({
+/* =========================================================
+   EDIT MODAL
+========================================================= */
+
+const showEditModal = ref(false)
+
+const editForm = ref({
   id: null,
   title: '',
   description: '',
   subject: '',
   deadline: '',
-  type: 'Assignment'
+  type: 'Assignment',
+  priority: 'Medium',
+  status: 'Active'
 })
 
+/* =========================================================
+   DELETE MODAL
+========================================================= */
+
+const showDeleteModal = ref(false)
+const taskToDelete = ref(null)
+
+/* =========================================================
+   TASK VALIDATION
+========================================================= */
+
 function isValidTask(task) {
-  return task && typeof task.id !== 'undefined' &&
-    typeof task.title === 'string' &&
-    typeof task.subject === 'string' &&
-    typeof task.deadline === 'string'
+  return (
+    task &&
+    typeof task === 'object' &&
+    task.title &&
+    task.subject &&
+    task.deadline
+  )
 }
 
-/* =========================
-   LOAD SAVED TASKS
-========================= */
+/* =========================================================
+   LOAD USER TASKS FROM LOCAL STORAGE
+========================================================= */
 
-onMounted(() => {
+function loadUserTasks() {
   try {
-    const savedTasks = localStorage.getItem(STORAGE_KEY)
-    if (!savedTasks) return
+    const storageKey = getUserTasksKey()
+    if (!storageKey) {
+      tasks.value = []
+      return
+    }
+
+    const savedTasks = localStorage.getItem(storageKey)
+
+    if (!savedTasks) {
+      tasks.value = []
+      return
+    }
 
     const parsedTasks = JSON.parse(savedTasks)
-    if (!Array.isArray(parsedTasks)) throw new Error('Saved data is not a task list')
+
+    if (!Array.isArray(parsedTasks)) {
+      tasks.value = []
+      return
+    }
 
     tasks.value = parsedTasks
       .filter(isValidTask)
       .map(task => ({
         ...task,
+
+        id: task.id || crypto.randomUUID(),
+
+        title: task.title || '',
+
         description: task.description || '',
+
+        subject: task.subject || '',
+
+        deadline: task.deadline || '',
+
         type: task.type || 'Assignment',
+
+        priority: task.priority || 'Medium',
+
+        status: task.status || 'Active',
+
         completed: Boolean(task.completed)
       }))
   } catch (error) {
-    console.error('Unable to load saved tasks.', error)
-    storageError.value = 'Your saved tasks could not be loaded. You can continue with a fresh list.'
+    console.error('Error loading tasks:', error)
+
+    tasks.value = []
+  }
+}
+
+/* =========================================================
+   CHECK SESSION ON MOUNT
+========================================================= */
+
+onMounted(() => {
+  try {
+    const storedUser = localStorage.getItem(CURRENT_USER_KEY)
+    if (storedUser) {
+      currentUser.value = JSON.parse(storedUser)
+      isLoggedIn.value = true
+      loadUserTasks()
+    }
+  } catch (error) {
+    console.error('Error restoring session:', error)
   }
 })
 
-/* =========================
+/* =========================================================
    SAVE TASKS TO LOCAL STORAGE
-========================= */
+========================================================= */
 
 watch(
   tasks,
-  (newTasks) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newTasks))
-      storageError.value = ''
-    } catch (error) {
-      console.error('Unable to save tasks.', error)
-      storageError.value = 'Your changes could not be saved on this device.'
+  newTasks => {
+    const storageKey = getUserTasksKey()
+    if (storageKey) {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(newTasks)
+      )
     }
   },
-  { deep: true }
-)
-
-/* =========================
-   STATISTICS
-========================= */
-
-const totalTasks = computed(() =>
-  tasks.value.length
-)
-
-const completedTasks = computed(() =>
-  tasks.value.filter(task => task.completed).length
-)
-
-const pendingTasks = computed(() =>
-  tasks.value.filter(task => !task.completed).length
-)
-
-const completionRate = computed(() => {
-  if (totalTasks.value === 0) {
-    return 0
+  {
+    deep: true
   }
+)
 
-  return Math.round(
-    (completedTasks.value / totalTasks.value) * 100
-  )
-})
-
-const nextTask = computed(() => nextUpcomingTask(tasks.value))
-
-const todayLabel = new Intl.DateTimeFormat('en-US', {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric'
-}).format(new Date())
-
-/* =========================
+/* =========================================================
    ADD TASK
-========================= */
+========================================================= */
 
 function addTask(newTask) {
-  tasks.value.push(newTask)
+  if (!newTask) {
+    return
+  }
+
+  const task = {
+    id: newTask.id || crypto.randomUUID(),
+
+    title: String(newTask.title || '').trim(),
+
+    description: String(
+      newTask.description || ''
+    ).trim(),
+
+    subject: String(
+      newTask.subject || ''
+    ).trim(),
+
+    deadline: newTask.deadline || '',
+
+    type: newTask.type || 'Assignment',
+
+    priority: newTask.priority || 'Medium',
+
+    status: newTask.status || 'Active',
+
+    completed: Boolean(newTask.completed)
+  }
+
+  /*
+   * Make sure required information exists
+   * before adding the task.
+   */
+  if (
+    !task.title ||
+    !task.subject ||
+    !task.deadline
+  ) {
+    console.warn(
+      'Task was not added because required fields are missing.'
+    )
+
+    return
+  }
+
+  tasks.value.push(task)
+
+  console.log('Task added successfully:', task)
 }
 
-/* =========================
-   DELETE TASK MODAL
-========================= */
-
-const showDeleteModal = ref(false)
-const taskToDelete = ref(null)
+/* =========================================================
+   DELETE TASK
+========================================================= */
 
 function deleteTask(id) {
   const task = tasks.value.find(
@@ -134,6 +283,7 @@ function deleteTask(id) {
   }
 
   taskToDelete.value = task
+
   showDeleteModal.value = true
 }
 
@@ -152,39 +302,51 @@ function confirmDelete() {
   )
 
   showDeleteModal.value = false
+
   taskToDelete.value = null
 }
 
-/* =========================
-   COMPLETE TASK
-========================= */
+/* =========================================================
+   COMPLETE / UNDO TASK
+========================================================= */
 
 function completeTask(id) {
   const task = tasks.value.find(
     task => task.id === id
   )
 
-  if (task) {
-    task.completed = !task.completed
+  if (!task) {
+    return
   }
+
+  task.completed = !task.completed
 }
 
-/* =========================
-   EDIT TASK MODAL
-========================= */
-
-const showEditModal = ref(false)
-
-const editForm = ref(emptyEditForm())
+/* =========================================================
+   EDIT TASK
+========================================================= */
 
 function editTask(task) {
+  if (!task) {
+    return
+  }
+
   editForm.value = {
     id: task.id,
-    title: task.title,
+
+    title: task.title || '',
+
     description: task.description || '',
-    subject: task.subject,
-    deadline: task.deadline,
-    type: task.type || 'Assignment'
+
+    subject: task.subject || '',
+
+    deadline: task.deadline || '',
+
+    type: task.type || 'Assignment',
+
+    priority: task.priority || 'Medium',
+
+    status: task.status || 'Active'
   }
 
   showEditModal.value = true
@@ -192,7 +354,17 @@ function editTask(task) {
 
 function cancelEdit() {
   showEditModal.value = false
-  editForm.value = emptyEditForm()
+
+  editForm.value = {
+    id: null,
+    title: '',
+    description: '',
+    subject: '',
+    deadline: '',
+    type: 'Assignment',
+    priority: 'Medium',
+    status: 'Active'
+  }
 }
 
 function saveEdit() {
@@ -200,130 +372,301 @@ function saveEdit() {
     task => task.id === editForm.value.id
   )
 
-  if (task) {
-    task.title = editForm.value.title.trim()
-    task.description = editForm.value.description.trim()
-    task.subject = editForm.value.subject.trim()
-    task.deadline = editForm.value.deadline
-    task.type = editForm.value.type
+  if (!task) {
+    return
   }
+
+  const title = editForm.value.title.trim()
+
+  const subject = editForm.value.subject.trim()
+
+  const deadline = editForm.value.deadline
+
+  /*
+   * Make sure required fields are not empty.
+   */
+  if (!title || !subject || !deadline) {
+    alert(
+      'Please complete the required fields.'
+    )
+
+    return
+  }
+
+  task.title = title
+
+  task.description =
+    editForm.value.description.trim()
+
+  task.subject = subject
+
+  task.deadline = deadline
+
+  task.type =
+    editForm.value.type || 'Assignment'
+
+  task.priority =
+    editForm.value.priority || 'Medium'
+
+  task.status =
+    editForm.value.status || 'Active'
 
   showEditModal.value = false
 }
+
+/* =========================================================
+   TASK STATISTICS
+========================================================= */
+
+const totalTasks = computed(() => {
+  return tasks.value.length
+})
+
+const completedTasks = computed(() => {
+  return tasks.value.filter(
+    task => task.completed
+  ).length
+})
+
+const pendingTasks = computed(() => {
+  return tasks.value.filter(
+    task => !task.completed
+  ).length
+})
+
+const completionRate = computed(() => {
+  if (totalTasks.value === 0) {
+    return 0
+  }
+
+  return Math.round(
+    (completedTasks.value /
+      totalTasks.value) *
+      100
+  )
+})
+
+/* =========================================================
+   UPCOMING TASK
+========================================================= */
+
+const upcomingTask = computed(() => {
+  const startOfToday = new Date()
+
+  startOfToday.setHours(
+    0,
+    0,
+    0,
+    0
+  )
+
+  return (
+    [...tasks.value]
+      .filter(task => {
+        if (
+          task.completed ||
+          !task.deadline
+        ) {
+          return false
+        }
+
+        const deadline = new Date(
+          `${task.deadline}T00:00:00`
+        )
+
+        return deadline >= startOfToday
+      })
+      .sort((a, b) => {
+        const dateA = new Date(
+          `${a.deadline}T00:00:00`
+        )
+
+        const dateB = new Date(
+          `${b.deadline}T00:00:00`
+        )
+
+        return dateA - dateB
+      })[0] || null
+  )
+})
+
+/* =========================================================
+   FORMAT UPCOMING TASK DATE
+========================================================= */
+
+function formatDate(dateString) {
+  if (!dateString) {
+    return ''
+  }
+
+  const date = new Date(
+    `${dateString}T00:00:00`
+  )
+
+  return date.toLocaleDateString(
+    'en-US',
+    {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }
+  )
+}
+
+/* =========================================================
+   CLEAR ALL TASKS
+========================================================= */
+
+function clearAllTasks() {
+  if (tasks.value.length === 0) {
+    return
+  }
+
+  const confirmed = window.confirm(
+    'Are you sure you want to delete all tasks?'
+  )
+
+  if (!confirmed) {
+    return
+  }
+
+  tasks.value = []
+}
 </script>
 
-
 <template>
+  <!-- =====================================================
+       AUTHENTICATION SCREEN
+  ====================================================== -->
+  <AuthForm
+    v-if="!isLoggedIn"
+    @login="handleAuthSubmit"
+  />
 
-  <!-- MAIN PAGE -->
+  <!-- =====================================================
+       MAIN APP (when logged in)
+  ====================================================== -->
   <div
-    class="min-h-screen bg-[#f7f8fc] text-slate-900"
+    v-else
+    class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 text-slate-800"
   >
 
-    <!-- HEADER -->
-    <AppHeader />
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
-    <div
-      v-if="storageError"
-      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4"
-      role="alert"
-    >
-      <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        {{ storageError }}
-      </p>
-    </div>
+    <AppHeader 
+      :user="{ name: currentUser.username }" 
+      @logout="logoutUser"
+    />
 
-    <!-- MAIN CONTENT -->
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
     <main
       class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
 
-      <!-- =========================
-           HERO SECTION
-      ========================== -->
+      <!-- ===================================================
+           HERO
+      ==================================================== -->
 
       <section
-        class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 text-white p-8 md:p-12 mb-6 shadow-2xl shadow-indigo-950/20"
+        class="mb-8"
       >
 
-        <!-- Decorative circles -->
         <div
-          class="absolute -top-20 -right-20 w-72 h-72 bg-fuchsia-400/15 rounded-full blur-2xl"
-        ></div>
-
-        <div
-          class="absolute -bottom-32 -left-20 w-80 h-80 bg-cyan-400/10 rounded-full blur-2xl"
-        ></div>
-
-        <div
-          class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8"
+          class="bg-gradient-to-r from-indigo-600 via-blue-600 to-violet-600 rounded-[2rem] p-8 md:p-10 text-white shadow-xl shadow-indigo-200/50"
         >
 
-          <!-- Hero Text -->
-          <div class="max-w-2xl">
-
-            <div
-              class="inline-flex items-center gap-2 border border-white/15 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium mb-5"
-            >
-              <span>✨</span>
-              <span>Student Productivity Dashboard</span>
-            </div>
-
-            <h1
-              class="text-3xl md:text-5xl font-bold leading-tight"
-            >
-              Own your study day.
-            </h1>
-
-            <p
-              class="text-blue-100 text-base md:text-lg mt-4 leading-relaxed"
-            >
-              {{ todayLabel }} · Turn every deadline into a clear, manageable next step.
-            </p>
-
-          </div>
-
-
-          <!-- Overall Progress -->
           <div
-            class="bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 w-full lg:w-72 shadow-xl shadow-black/10"
+            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8"
           >
 
-            <p class="text-blue-100 text-sm">
-              Overall Progress
-            </p>
+            <!-- Hero Text -->
 
-            <div class="flex items-end gap-2 mt-2">
+            <div>
 
-              <span class="text-4xl font-bold">
-                {{ completionRate }}%
-              </span>
-
-              <span
-                class="text-blue-200 text-sm mb-1"
+              <p
+                class="text-indigo-100 font-semibold text-sm mb-2"
               >
-                completed
-              </span>
+                STUDENT PRODUCTIVITY DASHBOARD
+              </p>
+
+              <h1
+                class="text-3xl md:text-4xl font-black tracking-tight"
+              >
+                Manage Your Academic Tasks
+              </h1>
+
+              <p
+                class="text-indigo-100 mt-3 max-w-2xl"
+              >
+                Keep track of assignments, projects,
+                quizzes, exams, and deadlines in one place.
+              </p>
 
             </div>
 
-            <!-- Progress Bar -->
+            <!-- Upcoming Task -->
+
             <div
-              class="h-2 bg-white/20 rounded-full mt-4 overflow-hidden"
+              class="bg-white/15 backdrop-blur-sm border border-white/20 rounded-2xl p-5 min-w-[280px]"
             >
+
+              <p
+                class="text-xs font-bold uppercase tracking-wider text-indigo-100"
+              >
+                Next Upcoming Task
+              </p>
 
               <div
-                class="h-full bg-white rounded-full transition-all duration-500"
-                :style="{ width: completionRate + '%' }"
-              ></div>
+                v-if="upcomingTask"
+                class="mt-2"
+              >
+
+                <h2
+                  class="font-bold text-lg truncate"
+                >
+                  {{ upcomingTask.title }}
+                </h2>
+
+                <p
+                  class="text-sm text-indigo-100 mt-1"
+                >
+                  {{ upcomingTask.subject }}
+                </p>
+
+                <p
+                  class="text-sm font-semibold mt-3"
+                >
+                  📅
+                  {{ formatDate(upcomingTask.deadline) }}
+                </p>
+
+              </div>
+
+              <div
+                v-else
+                class="mt-2"
+              >
+
+                <p
+                  class="font-semibold"
+                >
+                  No upcoming tasks
+                </p>
+
+                <p
+                  class="text-sm text-indigo-100 mt-1"
+                >
+                  Add a task to get started.
+                </p>
+
+              </div>
 
             </div>
-
-            <p
-              class="text-xs text-blue-200 mt-3"
-            >
-              {{ completedTasks }} finished · {{ pendingTasks }} still in focus
-            </p>
 
           </div>
 
@@ -331,43 +674,18 @@ function saveEdit() {
 
       </section>
 
-      <section class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-5 mb-8">
-        <div class="rounded-3xl border border-indigo-100 bg-white p-6 shadow-lg shadow-slate-200/40">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">Next up</p>
-              <h2 class="mt-2 text-xl font-bold text-slate-900">
-                {{ nextTask ? nextTask.title : 'Your schedule is clear' }}
-              </h2>
-              <p class="mt-1 text-sm text-slate-500">
-                {{ nextTask ? `${nextTask.subject} · Due ${nextTask.deadline}` : 'Add a task below to start planning your week.' }}
-              </p>
-            </div>
-            <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-indigo-50 text-xl">🎯</div>
-          </div>
-        </div>
-        <div class="rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-700 p-6 text-white shadow-lg shadow-indigo-200">
-          <p class="text-sm text-indigo-100">Consistency score</p>
-          <div class="mt-1 flex items-end gap-2">
-            <strong class="text-4xl">{{ completionRate }}%</strong>
-            <span class="mb-1 text-sm text-indigo-100">complete</span>
-          </div>
-          <p class="mt-3 text-sm text-indigo-100">Small wins add up. Keep the momentum going.</p>
-        </div>
-      </section>
-
-
-      <!-- =========================
+      <!-- ===================================================
            STATISTICS
-      ========================== -->
+      ==================================================== -->
 
       <section
-        class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
 
-        <!-- TOTAL TASKS -->
+        <!-- Total -->
+
         <div
-          class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300"
+          class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
         >
 
           <div
@@ -377,39 +695,33 @@ function saveEdit() {
             <div>
 
               <p
-                class="text-sm font-medium text-slate-500"
+                class="text-sm font-semibold text-slate-400"
               >
                 Total Tasks
               </p>
 
               <p
-                class="text-4xl font-bold text-slate-800 mt-2"
+                class="text-3xl font-black text-slate-800 mt-1"
               >
                 {{ totalTasks }}
-              </p>
-
-              <p
-                class="text-xs text-slate-400 mt-2"
-              >
-                All academic tasks
               </p>
 
             </div>
 
             <div
-              class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl group-hover:scale-110 transition"
+              class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-xl"
             >
-              📚
+              📋
             </div>
 
           </div>
 
         </div>
 
+        <!-- Pending -->
 
-        <!-- PENDING TASKS -->
         <div
-          class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300"
+          class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
         >
 
           <div
@@ -419,27 +731,21 @@ function saveEdit() {
             <div>
 
               <p
-                class="text-sm font-medium text-slate-500"
+                class="text-sm font-semibold text-slate-400"
               >
                 Pending
               </p>
 
               <p
-                class="text-4xl font-bold text-orange-500 mt-2"
+                class="text-3xl font-black text-orange-500 mt-1"
               >
                 {{ pendingTasks }}
-              </p>
-
-              <p
-                class="text-xs text-slate-400 mt-2"
-              >
-                Tasks to complete
               </p>
 
             </div>
 
             <div
-              class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl group-hover:scale-110 transition"
+              class="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-xl"
             >
               ⏳
             </div>
@@ -448,10 +754,10 @@ function saveEdit() {
 
         </div>
 
+        <!-- Completed -->
 
-        <!-- COMPLETED TASKS -->
         <div
-          class="group bg-white/80 backdrop-blur rounded-3xl p-6 border border-white shadow-lg hover:-translate-y-1 transition duration-300"
+          class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
         >
 
           <div
@@ -461,27 +767,21 @@ function saveEdit() {
             <div>
 
               <p
-                class="text-sm font-medium text-slate-500"
+                class="text-sm font-semibold text-slate-400"
               >
                 Completed
               </p>
 
               <p
-                class="text-4xl font-bold text-emerald-500 mt-2"
+                class="text-3xl font-black text-green-500 mt-1"
               >
                 {{ completedTasks }}
-              </p>
-
-              <p
-                class="text-xs text-slate-400 mt-2"
-              >
-                Finished tasks
               </p>
 
             </div>
 
             <div
-              class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-2xl group-hover:scale-110 transition"
+              class="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-xl"
             >
               ✓
             </div>
@@ -490,14 +790,51 @@ function saveEdit() {
 
         </div>
 
+        <!-- Completion Rate -->
+
+        <div
+          class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm"
+        >
+
+          <div
+            class="flex items-center justify-between"
+          >
+
+            <div>
+
+              <p
+                class="text-sm font-semibold text-slate-400"
+              >
+                Completion Rate
+              </p>
+
+              <p
+                class="text-3xl font-black text-indigo-600 mt-1"
+              >
+                {{ completionRate }}%
+              </p>
+
+            </div>
+
+            <div
+              class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-xl"
+            >
+              📈
+            </div>
+
+          </div>
+
+        </div>
+
       </section>
 
+      <!-- ===================================================
+           ADD TASK FORM
+      ==================================================== -->
 
-      <!-- =========================
-           ADD TASK
-      ========================== -->
-
-      <section class="mb-8">
+      <section
+        class="mb-8"
+      >
 
         <RecordForm
           @add-task="addTask"
@@ -505,132 +842,136 @@ function saveEdit() {
 
       </section>
 
-
-      <!-- =========================
+      <!-- ===================================================
            TASK LIST
-      ========================== -->
+      ==================================================== -->
 
-      <RecordList
-        :tasks="tasks"
-        @delete-task="deleteTask"
-        @edit-task="editTask"
-        @complete-task="completeTask"
-      />
+      <section>
+
+        <RecordList
+          :tasks="tasks"
+          @delete-task="deleteTask"
+          @edit-task="editTask"
+          @complete-task="completeTask"
+        />
+
+      </section>
+
+      <!-- ===================================================
+           CLEAR ALL BUTTON
+      ==================================================== -->
+
+      <div
+        v-if="tasks.length > 0"
+        class="flex justify-end mt-4"
+      >
+
+        <button
+          type="button"
+          @click="clearAllTasks"
+          class="text-sm font-semibold text-red-500 hover:text-red-700 transition"
+        >
+          Clear All Tasks
+        </button>
+
+      </div>
 
     </main>
 
-
-    <!-- FOOTER -->
-    <AppFooter />
-
-
-    <!-- =========================
-         EDIT TASK MODAL
-    ========================== -->
+    <!-- =====================================================
+         EDIT MODAL
+    ====================================================== -->
 
     <div
       v-if="showEditModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-task-heading"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+      @click.self="cancelEdit"
     >
 
-      <!-- Dark Background -->
       <div
-        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        @click="cancelEdit"
-      ></div>
-
-
-      <!-- Edit Modal -->
-      <div
-        class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+        class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
       >
 
         <!-- Modal Header -->
+
         <div
-          class="flex items-center justify-between px-6 py-5 border-b border-slate-100"
+          class="px-6 py-5 border-b border-slate-100"
         >
 
-          <div class="flex items-center gap-3">
-
-            <div
-              class="w-11 h-11 bg-blue-100 rounded-xl flex items-center justify-center"
-            >
-              <span class="text-xl">✏️</span>
-            </div>
+          <div
+            class="flex items-center justify-between"
+          >
 
             <div>
 
               <h2
-                id="edit-task-heading"
-                class="text-xl font-bold text-slate-800"
+                class="text-xl font-black text-slate-900"
               >
                 Edit Task
               </h2>
 
               <p
-                class="text-sm text-slate-400"
+                class="text-sm text-slate-400 mt-1"
               >
-                Update your task details
+                Update your task information.
               </p>
 
             </div>
 
+            <button
+              type="button"
+              @click="cancelEdit"
+              class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition"
+              aria-label="Close edit window"
+            >
+              ✕
+            </button>
+
           </div>
-
-
-          <!-- Close Button -->
-          <button
-            type="button"
-            @click="cancelEdit"
-            aria-label="Close edit task dialog"
-            class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition flex items-center justify-center text-xl"
-          >
-            ×
-          </button>
 
         </div>
 
+        <!-- Modal Form -->
 
-        <!-- Edit Form -->
         <form
           @submit.prevent="saveEdit"
-          class="p-6 space-y-5"
+          class="p-6"
         >
 
-          <!-- Task Title -->
-          <div>
-
-            <label
-              class="block text-sm font-semibold text-slate-700 mb-2"
-            >
-              Task Title
-              <span class="text-red-500">*</span>
-            </label>
-
-            <input
-              v-model="editForm.title"
-              type="text"
-              required
-              pattern=".*\S.*"
-              placeholder="Enter task title"
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
-            />
-
-          </div>
-
-
-          <!-- Subject + Type -->
           <div
             class="grid grid-cols-1 md:grid-cols-2 gap-5"
           >
 
+            <!-- Title -->
+
+            <div
+              class="md:col-span-2"
+            >
+
+              <label
+                for="edit-title"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Task Title
+                <span class="text-red-500">*</span>
+              </label>
+
+              <input
+                id="edit-title"
+                v-model="editForm.title"
+                type="text"
+                required
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+              />
+
+            </div>
+
             <!-- Subject -->
+
             <div>
 
               <label
+                for="edit-subject"
                 class="block text-sm font-semibold text-slate-700 mb-2"
               >
                 Subject
@@ -638,101 +979,183 @@ function saveEdit() {
               </label>
 
               <input
-              v-model="editForm.subject"
-              type="text"
-              required
-              pattern=".*\S.*"
-                placeholder="Enter subject"
+                id="edit-subject"
+                v-model="editForm.subject"
+                type="text"
+                required
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
               />
 
             </div>
 
-
             <!-- Type -->
+
             <div>
 
               <label
+                for="edit-type"
                 class="block text-sm font-semibold text-slate-700 mb-2"
               >
                 Task Type
               </label>
 
               <select
+                id="edit-type"
                 v-model="editForm.type"
                 class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
               >
 
-                <option>Assignment</option>
-                <option>Project</option>
-                <option>Quiz</option>
-                <option>Exam</option>
-                <option>Other</option>
+                <option value="Assignment">
+                  Assignment
+                </option>
+
+                <option value="Project">
+                  Project
+                </option>
+
+                <option value="Quiz">
+                  Quiz
+                </option>
+
+                <option value="Exam">
+                  Exam
+                </option>
+
+                <option value="Other">
+                  Other
+                </option>
 
               </select>
 
             </div>
 
-          </div>
+            <!-- Priority -->
 
+            <div>
 
-          <!-- Description -->
-          <div>
+              <label
+                for="edit-priority"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Priority
+              </label>
 
-            <label
-              class="block text-sm font-semibold text-slate-700 mb-2"
+              <select
+                id="edit-priority"
+                v-model="editForm.priority"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+              >
+
+                <option value="Low">
+                  Low
+                </option>
+
+                <option value="Medium">
+                  Medium
+                </option>
+
+                <option value="High">
+                  High
+                </option>
+
+              </select>
+
+            </div>
+
+            <!-- Status -->
+
+            <div>
+
+              <label
+                for="edit-status"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Status
+              </label>
+
+              <select
+                id="edit-status"
+                v-model="editForm.status"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+              >
+
+                <option value="Active">
+                  Active
+                </option>
+
+                <option value="Inactive">
+                  Inactive
+                </option>
+
+              </select>
+
+            </div>
+
+            <!-- Deadline -->
+
+            <div>
+
+              <label
+                for="edit-deadline"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Deadline
+                <span class="text-red-500">*</span>
+              </label>
+
+              <input
+                id="edit-deadline"
+                v-model="editForm.deadline"
+                type="date"
+                required
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+              />
+
+            </div>
+
+            <!-- Description -->
+
+            <div
+              class="md:col-span-2"
             >
-              Description
-            </label>
 
-            <textarea
-              v-model="editForm.description"
-              rows="3"
-              placeholder="Add some details about this task..."
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition resize-none"
-            ></textarea>
+              <label
+                for="edit-description"
+                class="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Description
+              </label>
 
-          </div>
+              <textarea
+                id="edit-description"
+                v-model="editForm.description"
+                rows="4"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition resize-none"
+              ></textarea>
 
-
-          <!-- Deadline -->
-          <div>
-
-            <label
-              class="block text-sm font-semibold text-slate-700 mb-2"
-            >
-              Deadline
-              <span class="text-red-500">*</span>
-            </label>
-
-            <input
-              v-model="editForm.deadline"
-              type="date"
-              required
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
-            />
+            </div>
 
           </div>
-
 
           <!-- Buttons -->
+
           <div
-            class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-slate-100"
+            class="flex justify-end gap-3 mt-6"
           >
 
             <button
               type="button"
               @click="cancelEdit"
-              class="px-5 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
+              class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-sm hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 transition"
+              class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition shadow-lg shadow-indigo-200"
             >
-              ✓ Save Changes
+              Save Changes
             </button>
 
           </div>
@@ -743,98 +1166,61 @@ function saveEdit() {
 
     </div>
 
-
-    <!-- =========================
-         DELETE TASK MODAL
-    ========================== -->
+    <!-- =====================================================
+         DELETE MODAL
+    ====================================================== -->
 
     <div
       v-if="showDeleteModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-task-heading"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+      @click.self="cancelDelete"
     >
 
-      <!-- Dark Background -->
       <div
-        class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        @click="cancelDelete"
-      ></div>
-
-
-      <!-- Delete Modal -->
-      <div
-        class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+        class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6"
       >
 
-        <div class="p-7 text-center">
+        <div
+          class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center text-2xl mb-4"
+        >
+          🗑️
+        </div>
 
-          <!-- Delete Icon -->
-          <div
-            class="w-16 h-16 mx-auto rounded-2xl bg-red-100 flex items-center justify-center mb-5"
+        <h2
+          class="text-xl font-black text-slate-900"
+        >
+          Delete Task?
+        </h2>
+
+        <p
+          class="text-sm text-slate-500 mt-2"
+        >
+          Are you sure you want to delete
+          <strong>
+            {{ taskToDelete?.title }}
+          </strong>
+          ? This action cannot be undone.
+        </p>
+
+        <div
+          class="flex justify-end gap-3 mt-6"
+        >
+
+          <button
+            type="button"
+            @click="cancelDelete"
+            class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition"
           >
-            <span class="text-3xl">
-              🗑️
-            </span>
-          </div>
+            Cancel
+          </button>
 
-
-          <!-- Title -->
-          <h2
-            id="delete-task-heading"
-            class="text-2xl font-bold text-slate-800"
+          <button
+            type="button"
+            @click="confirmDelete"
+            class="px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition"
           >
-            Delete Task?
-          </h2>
-
-
-          <!-- Message -->
-          <p
-            class="text-slate-500 mt-3 leading-relaxed"
-          >
-            Are you sure you want to delete
-            <span
-              class="font-semibold text-slate-700"
-            >
-              "{{ taskToDelete?.title }}"
-            </span>
-            ?
-          </p>
-
-
-          <p
-            class="text-sm text-slate-400 mt-2"
-          >
-            This action cannot be undone.
-          </p>
-
-
-          <!-- Buttons -->
-          <div
-            class="flex flex-col sm:flex-row gap-3 mt-7"
-          >
-
-            <!-- Cancel -->
-            <button
-              type="button"
-              @click="cancelDelete"
-              class="flex-1 px-5 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition"
-            >
-              Cancel
-            </button>
-
-
-            <!-- Delete -->
-            <button
-              type="button"
-              @click="confirmDelete"
-              class="flex-1 px-5 py-3 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 shadow-sm hover:shadow-lg transition"
-            >
-              🗑️ Delete Task
-            </button>
-
-          </div>
+            Delete Task
+          </button>
 
         </div>
 
@@ -842,6 +1228,12 @@ function saveEdit() {
 
     </div>
 
-  </div>
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
 
+    <AppFooter />
+
+  </div>
 </template>
+```

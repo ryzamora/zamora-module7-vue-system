@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 9 Architecture Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        .architecture {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .architecture h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+        }
+        .architecture.before h2 {
+            border-bottom-color: #999;
+        }
+        .architecture.after h2 {
+            border-bottom-color: #ff6b6b;
+        }
+        .component {
+            background: #f5f5f5;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .component.new {
+            background: #fff3cd;
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+        }
+        .component h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+        }
+        .component.new h3 {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .component ul {
+            list-style: none;
+            font-size: 0.95em;
+            color: #555;
+        }
+        .component li {
+            padding: 6px 0;
+            margin-left: 20px;
+            position: relative;
+        }
+        .component li:before {
+            content: "•";
+            position: absolute;
+            left: -15px;
+        }
+        .component li.new-feature {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .arrow {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .badge-new {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        .storage {
+            background: #e8f4f8;
+            border: 2px solid #0288d1;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #0288d1;
+        }
+        .summary {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .summary h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .summary-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .summary-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .summary-table tr:hover {
+            background: #f5f5f5;
+        }
+        .new-row {
+            background: #fff3cd;
+        }
+        @media (max-width: 1000px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📐 Module 9: Architecture Comparison</h1>
+        
+        <div class="comparison">
+            <!-- BEFORE -->
+            <div class="architecture before">
+                <h2>Module 6 - BEFORE</h2>
+                
+                <div class="component">
+                    <h3>🎨 RecordForm</h3>
+                    <ul>
+                        <li>Task Title</li>
+                        <li>Subject</li>
+                        <li>Task Type</li>
+                        <li>Priority</li>
+                        <li>Deadline</li>
+                        <li>Description</li>
+                    </ul>
+                </div>
+
+                <div class="arrow">↓</div>
+
+                <div class="storage">
+                    Task Object (localStorage)
+                </div>
+
+                <div class="arrow">↓</div>
+
+                <div class="component">
+                    <h3>📋 RecordList</h3>
+                    <ul>
+                        <li>Search Tasks</li>
+                        <li>Sort by Deadline</li>
+                        <li>Display Task List</li>
+                        <li>CRUD Buttons</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- AFTER -->
+            <div class="architecture after">
+                <h2>Module 9 - AFTER <span class="badge-new">EVOLVED</span></h2>
+                
+                <div class="component">
+                    <h3>🎨 RecordForm</h3>
+                    <ul>
+                        <li>Task Title</li>
+                        <li>Subject</li>
+                        <li>Task Type</li>
+                        <li>Priority</li>
+                        <li class="new-feature">⭐ Status Selector (Active/Inactive)</li>
+                        <li>Deadline</li>
+                        <li>Description</li>
+                    </ul>
+                </div>
+
+                <div class="arrow">↓</div>
+
+                <div class="storage">
+                    Task Object + Status Field (localStorage)
+                </div>
+
+                <div class="arrow">↓</div>
+
+                <div class="component new">
+                    <h3>📋 RecordList <span class="badge-new">NEW FEATURES</span></h3>
+                    <ul>
+                        <li>Search Tasks</li>
+                        <li>Sort by Deadline</li>
+                        <li class="new-feature">⭐ Filter by Status (All/Active/Inactive)</li>
+                        <li class="new-feature">⭐ Status Badge Display (Green/Gray)</li>
+                        <li>Display Task List</li>
+                        <li>CRUD Buttons</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="summary">
+            <h2>📊 Change Summary - CR-M9-01</h2>
+            <table class="summary-table">
+                <tr>
+                    <th>Component</th>
+                    <th>What Changed</th>
+                    <th>Status</th>
+                </tr>
+                <tr>
+                    <td><strong>RecordForm</strong></td>
+                    <td>Added Status field (dropdown: Active/Inactive)</td>
+                    <td>🆕 NEW</td>
+                </tr>
+                <tr>
+                    <td><strong>RecordList</strong></td>
+                    <td>Added Status filter dropdown</td>
+                    <td>🆕 NEW</td>
+                </tr>
+                <tr>
+                    <td><strong>RecordList</strong></td>
+                    <td>Added Status badge display (color-coded)</td>
+                    <td>🆕 NEW</td>
+                </tr>
+                <tr>
+                    <td><strong>Task Storage</strong></td>
+                    <td>Added 'status' field to task object</td>
+                    <td>🆕 NEW</td>
+                </tr>
+                <tr>
+                    <td><strong>Backward Compatibility</strong></td>
+                    <td>Older tasks without status default to Active</td>
+                    <td>✅ PRESERVED</td>
+                </tr>
+                <tr>
+                    <td><strong>Other Components</strong></td>
+                    <td>AppHeader, AppFooter, Task CRUD operations</td>
+                    <td>➡️ UNCHANGED</td>
+                </tr>
+            </table>
+
+            <p style="margin-top: 30px; color: #666; text-align: center; font-style: italic;">
+                <strong>Type:</strong> Perfective Maintenance | <strong>Version:</strong> 1.1.0 | <strong>Priority:</strong> High
+            </p>
+        </div>
+    </div>
+</body>
+</html>

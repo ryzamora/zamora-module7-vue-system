@@ -1,3 +1,4 @@
+```vue
 <script setup>
 import { ref } from 'vue'
 
@@ -9,7 +10,6 @@ const subject = ref('')
 const deadline = ref('')
 const type = ref('Assignment')
 const priority = ref('Medium')
-const status = ref('Active')
 
 function submitTask() {
   const newTask = {
@@ -20,37 +20,29 @@ function submitTask() {
     deadline: deadline.value,
     type: type.value,
     priority: priority.value,
-    status: status.value,
     completed: false
   }
 
   emit('add-task', newTask)
 
-  // Clear form after adding
   title.value = ''
   description.value = ''
   subject.value = ''
   deadline.value = ''
   type.value = 'Assignment'
   priority.value = 'Medium'
-  status.value = 'Active'
 }
 </script>
 
 <template>
-  <section
-    class="bg-white rounded-[2rem] border border-slate-200/80 shadow-xl shadow-slate-200/40 overflow-hidden"
-  >
+  <section class="bg-white rounded-[2rem] border border-slate-200/80 shadow-xl shadow-slate-200/40 overflow-hidden">
 
-    <!-- Header -->
-    <div
-      class="px-6 py-5 border-b border-indigo-50 bg-gradient-to-r from-white via-indigo-50/50 to-white"
-    >
+    <!-- Form Header -->
+    <div class="px-6 py-5 border-b border-indigo-50 bg-gradient-to-r from-white via-indigo-50/50 to-white">
+
       <div class="flex items-center gap-3">
 
-        <div
-          class="w-11 h-11 bg-indigo-100 rounded-2xl flex items-center justify-center shadow-sm shadow-indigo-100"
-        >
+        <div class="w-11 h-11 bg-indigo-100 rounded-2xl flex items-center justify-center shadow-sm shadow-indigo-100">
           <span class="text-xl">➕</span>
         </div>
 
@@ -65,6 +57,7 @@ function submitTask() {
         </div>
 
       </div>
+
     </div>
 
     <!-- Form -->
@@ -77,10 +70,8 @@ function submitTask() {
 
         <!-- Title -->
         <div class="md:col-span-2">
-          <label
-            for="new-task-title"
-            class="block text-sm font-semibold text-slate-700 mb-2"
-          >
+
+          <label for="new-task-title" class="block text-sm font-semibold text-slate-700 mb-2">
             Task Title <span class="text-red-500">*</span>
           </label>
 
@@ -93,14 +84,13 @@ function submitTask() {
             placeholder="e.g. Software Engineering Assignment"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           />
+
         </div>
 
         <!-- Subject -->
         <div>
-          <label
-            for="new-task-subject"
-            class="block text-sm font-semibold text-slate-700 mb-2"
-          >
+
+          <label for="new-task-subject" class="block text-sm font-semibold text-slate-700 mb-2">
             Subject <span class="text-red-500">*</span>
           </label>
 
@@ -113,14 +103,13 @@ function submitTask() {
             placeholder="e.g. Software Engineering 1"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           />
+
         </div>
 
         <!-- Type -->
         <div>
-          <label
-            for="new-task-type"
-            class="block text-sm font-semibold text-slate-700 mb-2"
-          >
+
+          <label for="new-task-type" class="block text-sm font-semibold text-slate-700 mb-2">
             Task Type
           </label>
 
@@ -129,16 +118,18 @@ function submitTask() {
             id="new-task-type"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           >
-            <option value="Assignment">Assignment</option>
-            <option value="Project">Project</option>
-            <option value="Quiz">Quiz</option>
-            <option value="Exam">Exam</option>
-            <option value="Other">Other</option>
+            <option>Assignment</option>
+            <option>Project</option>
+            <option>Quiz</option>
+            <option>Exam</option>
+            <option>Other</option>
           </select>
+
         </div>
 
         <!-- Priority -->
         <div>
+
           <label
             for="new-task-priority"
             class="block text-sm font-semibold text-slate-700 mb-2"
@@ -155,33 +146,13 @@ function submitTask() {
             <option value="Medium">Medium</option>
             <option value="High">High</option>
           </select>
-        </div>
 
-        <!-- Status -->
-        <div>
-          <label
-            for="new-task-status"
-            class="block text-sm font-semibold text-slate-700 mb-2"
-          >
-            Status
-          </label>
-
-          <select
-            v-model="status"
-            id="new-task-status"
-            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
-          >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
         </div>
 
         <!-- Deadline -->
         <div>
-          <label
-            for="new-task-deadline"
-            class="block text-sm font-semibold text-slate-700 mb-2"
-          >
+
+          <label for="new-task-deadline" class="block text-sm font-semibold text-slate-700 mb-2">
             Deadline <span class="text-red-500">*</span>
           </label>
 
@@ -192,30 +163,31 @@ function submitTask() {
             required
             class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
           />
+
         </div>
 
         <!-- Description -->
-        <div class="md:col-span-2">
-          <label
-            for="new-task-description"
-            class="block text-sm font-semibold text-slate-700 mb-2"
-          >
+        <div>
+
+          <label for="new-task-description" class="block text-sm font-semibold text-slate-700 mb-2">
             Description
           </label>
 
-          <textarea
+          <input
             v-model="description"
             id="new-task-description"
-            rows="3"
+            type="text"
             placeholder="Short description..."
-            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition resize-none"
-          ></textarea>
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
+          />
+
         </div>
 
       </div>
 
       <!-- Button -->
       <div class="flex justify-end mt-6">
+
         <button
           type="submit"
           class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 transition flex items-center gap-2"
@@ -223,9 +195,11 @@ function submitTask() {
           <span>+</span>
           Add Task
         </button>
+
       </div>
 
     </form>
 
   </section>
 </template>
+```
