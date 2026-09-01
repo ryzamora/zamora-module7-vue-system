@@ -1,4 +1,3 @@
-```vue
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 
@@ -6,12 +5,78 @@ import AppHeader from './components/AppHeader.vue'
 import RecordForm from './components/RecordForm.vue'
 import RecordList from './components/RecordList.vue'
 import AppFooter from './components/AppFooter.vue'
+import AuthForm from './components/AuthForm.vue'
 
-const currentUser = {
-  name: 'Ryza P. Zamora'
+/* =========================================================
+   AUTHENTICATION
+========================================================= */
+
+const isLoggedIn = ref(false)
+const currentUser = ref(null)
+
+const USERS_STORAGE_KEY = 'taskly-users'
+const CURRENT_USER_KEY = 'taskly-current-user'
+const TASKS_STORAGE_PREFIX = 'taskly-tasks-'
+
+function getAllUsers() {
+  try {
+    const stored = localStorage.getItem(USERS_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
 }
 
-const STORAGE_KEY = 'student-tasks'
+function handleAuthSubmit(authData) {
+  if (authData.mode === 'login') {
+    loginUser(authData.username, authData.password)
+  } else {
+    registerUser(authData.username, authData.password)
+  }
+}
+
+function registerUser(username, password) {
+  const users = getAllUsers()
+  
+  if (users.some(u => u.username === username)) {
+    alert('Username already exists. Please choose another.')
+    return
+  }
+
+  users.push({ username, password })
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+  loginUser(username, password)
+}
+
+function loginUser(username, password) {
+  const users = getAllUsers()
+  const user = users.find(u => u.username === username && u.password === password)
+
+  if (!user) {
+    alert('Invalid username or password.')
+    return
+  }
+
+  currentUser.value = { username }
+  isLoggedIn.value = true
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(currentUser.value))
+  loadUserTasks()
+}
+
+function logoutUser() {
+  if (confirm('Are you sure you want to log out?')) {
+    isLoggedIn.value = false
+    currentUser.value = null
+    localStorage.removeItem(CURRENT_USER_KEY)
+    tasks.value = []
+  }
+}
+
+function getUserTasksKey() {
+  return currentUser.value ? `${TASKS_STORAGE_PREFIX}${currentUser.value.username}` : null
+}
+
+const STORAGE_KEY = computed(() => getUserTasksKey())
 
 /* =========================================================
    TASK DATA
@@ -58,12 +123,18 @@ function isValidTask(task) {
 }
 
 /* =========================================================
-   LOAD TASKS FROM LOCAL STORAGE
+   LOAD USER TASKS FROM LOCAL STORAGE
 ========================================================= */
 
-onMounted(() => {
+function loadUserTasks() {
   try {
-    const savedTasks = localStorage.getItem(STORAGE_KEY)
+    const storageKey = getUserTasksKey()
+    if (!storageKey) {
+      tasks.value = []
+      return
+    }
+
+    const savedTasks = localStorage.getItem(storageKey)
 
     if (!savedTasks) {
       tasks.value = []
@@ -105,6 +176,23 @@ onMounted(() => {
 
     tasks.value = []
   }
+}
+
+/* =========================================================
+   CHECK SESSION ON MOUNT
+========================================================= */
+
+onMounted(() => {
+  try {
+    const storedUser = localStorage.getItem(CURRENT_USER_KEY)
+    if (storedUser) {
+      currentUser.value = JSON.parse(storedUser)
+      isLoggedIn.value = true
+      loadUserTasks()
+    }
+  } catch (error) {
+    console.error('Error restoring session:', error)
+  }
 })
 
 /* =========================================================
@@ -114,10 +202,13 @@ onMounted(() => {
 watch(
   tasks,
   newTasks => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(newTasks)
-    )
+    const storageKey = getUserTasksKey()
+    if (storageKey) {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(newTasks)
+      )
+    }
   },
   {
     deep: true
@@ -444,7 +535,19 @@ function clearAllTasks() {
 </script>
 
 <template>
+  <!-- =====================================================
+       AUTHENTICATION SCREEN
+  ====================================================== -->
+  <AuthForm
+    v-if="!isLoggedIn"
+    @login="handleAuthSubmit"
+  />
+
+  <!-- =====================================================
+       MAIN APP (when logged in)
+  ====================================================== -->
   <div
+    v-else
     class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 text-slate-800"
   >
 
@@ -452,7 +555,10 @@ function clearAllTasks() {
          HEADER
     ====================================================== -->
 
-    <AppHeader :user="currentUser" />
+    <AppHeader 
+      :user="{ name: currentUser.username }" 
+      @logout="logoutUser"
+    />
 
     <!-- =====================================================
          MAIN CONTENT
